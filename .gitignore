@@ -1,0 +1,53 @@
+# vcpkg 的安装路径（假设是放在项目目录下）
+/build
+/vcpkg
+/vcpkg_installed
+.vcpkg-root
+
+# CMake 构建目录
+build/
+Build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+
+# 日志文件
+*.log
+
+# Visual Studio 的缓存文件和目录
+*.VC.db
+*.VC.VC.opendb
+.vscode/
+
+# 编译生成的二进制文件
+*.exe
+*.out
+*.app
+*.dylib
+*.dll
+*.lib
+*.so
+*.a
+*.o
+*.obj
+
+# 临时文件
+*.tmp
+*.temp
+
+# IDE 配置文件
+*.idea/
+*.swp
+*.DS_Store
+
+# 如果你使用了 Ninja 作为构建工具，忽略它的构建文件
+build.ninja
+rules.ninja
+.ninja_deps
+.ninja_log
+
+# 如果你在项目中使用 vcpkg 的 manifest 模式 (vcpkg.json)
+# 请保留 vcpkg.json 和 vcpkg-configuration.json 文件
+!vcpkg.json
+!vcpkg-configuration.json
