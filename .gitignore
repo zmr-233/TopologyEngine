@@ -12,6 +12,9 @@ CMakeCache.txt
 cmake_install.cmake
 CTestTestfile.cmake
 
+# 备份文件
+backup/
+
 # 日志文件
 *.log
 

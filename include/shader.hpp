@@ -12,6 +12,9 @@
 #include <ostream>
 #include <sstream>
 #include <initializer_list>
+#include <vector>
+#include <algorithm>
+#include <utility>
 
 #include "utils.hpp"
 

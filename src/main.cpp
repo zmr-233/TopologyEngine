@@ -1,9 +1,13 @@
 #include "shader.hpp"
 #define STB_IMAGE_IMPLEMENTATION
+#include "define.hpp"
 #include "stb_image.h"
 
-
 int main() {
+    // 全局设置
+    //-----------------------------------------------------------
+    stbi_set_flip_vertically_on_load(true);  // 设置图片上下翻转
+
     // 初始化GLFW 并配置GLFW
     //-----------------------------------------------------------
     glfwInit();
@@ -33,12 +37,6 @@ int main() {
     std::string fFilePath = "res/shaders/shader.frag";
     Shader context(vFilePath, fFilePath);
 
-    // 纹理资源
-    //-----------------------------------------------------------
-    int width, height, nrChannels;
-    u_char* data = stbi_load("res/textures/container.jpg", &width, &height, &nrChannels, 0);
-    CHECK_PTR(data);
-
     // 设置顶点数据
     //-----------------------------------------------------------
     // clang-format off
@@ -52,40 +50,55 @@ int main() {
     // clang-format on
 
     unsigned int indices[] = {
-        0, 1, 2,  // 第一个三角形
-        2, 3, 0   // 第二个三角形
+        0, 1, 3,  // 第一个三角形
+        1, 2, 3   // 第二个三角形
     };
 
     // 顶点数组对象(Vertex Array Object, VAO) &
     // 顶点缓冲对象(Vertex Buffer Object, VBO) &
     // 索引缓冲对象(Element Buffer Object, EBO)
-    uint VAO{}, VBO{}, EBO{}, texture1{};
+    uint VAO{}, VBO{}, EBO{};
+    std::vector<std::pair<std::string, uint>> textures{
+        {"res/textures/container.jpg", 0},
+        {"res/textures/awesomeface.png", 0}};
+
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
-    glGenTextures(1, &texture1);
 
     // 1.绑定VAO
     glBindVertexArray(VAO);
-    
+
     // 2. 把顶点数组复制到缓冲中供OpenGL使用
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    
+
     // 3. 把索引数组到一个索引缓冲中，供OpenGL使用
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    
+
     // 4. 绑定纹理
-    glBindTexture(GL_TEXTURE_2D, texture1);
-    // 设置纹理环绕方式
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);    
-    // 加载纹理
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    std::for_each(textures.begin(), textures.end(), [i = 0](auto& texture) mutable {
+        glGenTextures(1, &texture.second);
+        glBindTexture(GL_TEXTURE_2D, texture.second);
+        // 设置纹理环绕方式
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // 加载纹理
+        int width, height, nrChannels;
+        u_char* data = stbi_load(texture.first.c_str(), &width, &height, &nrChannels, 0);
+        CHECK_PTR(data);
+        // 根据通道数动态设置内部格式
+        GLenum internalFormat = (nrChannels == 4) ? GL_RGBA : GL_RGB;
+        GLenum format         = (nrChannels == 4) ? GL_RGBA : GL_RGB;
+        // 设置纹理数据
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        stbi_image_free(data);
+        i++;
+    });
 
     // *. 设置顶点属性指针
     // 位置属性
@@ -98,13 +111,10 @@ int main() {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
-
     // 解绑VBO
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // 解绑VAO
     glBindVertexArray(0);
-    // 释放图像资源
-    stbi_image_free(data);
 
     // *.特殊设置
     // -----------------------------------------------------------
@@ -116,6 +126,14 @@ int main() {
     };
     // wireframeMode();
 
+    // 循环之前
+    //-----------------------------------------------------------
+    context.use();
+    // 告诉OpenGL每个着色器采样器属于哪个纹理单元 -- 通常只需要设置一次即可
+    std::for_each(textures.begin(), textures.end(), [&, i = 0](auto& texture) mutable {
+        context.setInt(std::string("texture") + std::to_string(i + 1), {i});
+        i++;
+    });
     // 渲染循环(Render Loop)
     //-----------------------------------------------------------
     while (!glfwWindowShouldClose(window)) {
@@ -135,13 +153,16 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        context.use();
-
         // 绑定纹理
-        glBindTexture(GL_TEXTURE_2D, texture1);
+        std::for_each(textures.begin(), textures.end(), [&, i = 0](auto& texture) mutable {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, texture.second);
+            i++;
+        });
 
+        // 绘制物体
+        context.use();
         glBindVertexArray(VAO);
-        
         // glDrawArrays(GL_POLYGON, 0, 4);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
