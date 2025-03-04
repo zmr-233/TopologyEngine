@@ -1,4 +1,7 @@
 #include "shader.hpp"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 
 int main() {
     // 初始化GLFW 并配置GLFW
@@ -30,47 +33,81 @@ int main() {
     std::string fFilePath = "res/shaders/shader.frag";
     Shader context(vFilePath, fFilePath);
 
+    // 纹理资源
+    //-----------------------------------------------------------
+    int width, height, nrChannels;
+    u_char* data = stbi_load("res/textures/container.jpg", &width, &height, &nrChannels, 0);
+    CHECK_PTR(data);
+
     // 设置顶点数据
     //-----------------------------------------------------------
+    // clang-format off
     float vertices[] = {
-        // 位置              // 颜色
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,   // 右下
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // 左下
-        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,    // 顶部
-    };
+        //     ---- 位置 ----       ---- 颜色 ----     - 纹理坐标 -
+             0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // 右上
+             0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // 右下
+            -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // 左下
+            -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // 左上
+        };
+    // clang-format on
 
     unsigned int indices[] = {
         0, 1, 2,  // 第一个三角形
+        2, 3, 0   // 第二个三角形
     };
 
     // 顶点数组对象(Vertex Array Object, VAO) &
     // 顶点缓冲对象(Vertex Buffer Object, VBO) &
     // 索引缓冲对象(Element Buffer Object, EBO)
-    uint VAO{}, VBO{}, EBO{};
+    uint VAO{}, VBO{}, EBO{}, texture1{};
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
+    glGenTextures(1, &texture1);
+
     // 1.绑定VAO
     glBindVertexArray(VAO);
+    
     // 2. 把顶点数组复制到缓冲中供OpenGL使用
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    
     // 3. 把索引数组到一个索引缓冲中，供OpenGL使用
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    // 4. 设置顶点属性指针
+    
+    // 4. 绑定纹理
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    // 设置纹理环绕方式
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);    
+    // 加载纹理
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // *. 设置顶点属性指针
     // 位置属性
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     // 颜色属性
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    // 纹理坐标属性
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
 
     // 解绑VBO
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // 解绑VAO
     glBindVertexArray(0);
+    // 释放图像资源
+    stbi_image_free(data);
 
+    // *.特殊设置
+    // -----------------------------------------------------------
     auto wireframeMode = []() {  // 线框模式
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     };
@@ -98,17 +135,14 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // 绘制三角形
-        float timeValue  = glfwGetTime();
-        float greenValue = (std::sin(timeValue) / 2.0f) + 0.5f;
-        float redValue   = (std::sin(timeValue) + 12.0f / 3.0f) + 7.5f;
-        float blueValue  = (std::sin(timeValue) - 10.0f / 4.0f) - 5.5f;
         context.use();
-        context.setFloat("ourColor", {redValue, greenValue, blueValue});
-        context.setFloat("aOffset", {0.5f, 0.1f, 0.0f});
+
+        // 绑定纹理
+        glBindTexture(GL_TEXTURE_2D, texture1);
 
         glBindVertexArray(VAO);
-        // glDrawArrays(GL_TRIANGLES, 0, 3); 不再使用
+        
+        // glDrawArrays(GL_POLYGON, 0, 4);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // 交换缓冲
