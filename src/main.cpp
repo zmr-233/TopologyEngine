@@ -81,19 +81,36 @@ int main() {
     // 设置顶点数据
     //-----------------------------------------------------------
     float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f};
+        0.5f, 0.5f, 0.0f,    // 右上角
+        0.5f, -0.5f, 0.0f,   // 右下角
+        -0.5f, -0.5f, 0.0f,  // 左下角
+        -0.5f, 0.5f, 0.0f    // 左上角
+    };
+
+    unsigned int indices[] = {
+        // 注意索引从0开始!
+        // 此例的索引(0,1,2,3)就是顶点数组vertices的下标，
+        // 这样可以由下标代表顶点组合成矩形
+
+        0, 1, 3,  // 第一个三角形
+        1, 2, 3   // 第二个三角形
+    };
+
     // 顶点数组对象(Vertex Array Object, VAO) &
-    // 顶点缓冲对象(Vertex Buffer Object, VBO)
-    uint VAO{}, VBO{};
+    // 顶点缓冲对象(Vertex Buffer Object, VBO) &
+    // 索引缓冲对象(Element Buffer Object, EBO)
+    uint VAO{}, VBO{}, EBO{};
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
     // 1.绑定VAO
     glBindVertexArray(VAO);
     // 2. 把顶点数组复制到缓冲中供OpenGL使用
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // 3. 把索引数组到一个索引缓冲中，供OpenGL使用
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     // 3. 设置顶点属性指针
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -102,6 +119,15 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // 解绑VAO
     glBindVertexArray(0);
+
+    
+    auto wireframeMode = [](){ //线框模式
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    };
+    auto fillMode = [](){ //填充模式
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    };
+    wireframeMode();
 
     // 渲染循环(Render Loop)
     //-----------------------------------------------------------
@@ -124,7 +150,8 @@ int main() {
         // 绘制三角形
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // glDrawArrays(GL_TRIANGLES, 0, 3); 不再使用
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // 交换缓冲
         //-----------------------------------------------------------
