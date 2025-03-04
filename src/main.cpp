@@ -160,8 +160,14 @@ int main() {
             i++;
         });
 
+        // 旋转物体
+        glm::mat4 trans(1.0f);
+        trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+
         // 绘制物体
         context.use();
+        context.setMat4("transform", trans);
         glBindVertexArray(VAO);
         // glDrawArrays(GL_POLYGON, 0, 4);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

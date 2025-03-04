@@ -113,3 +113,10 @@ void Shader::setFloat(const std::string& name, std::initializer_list<float> vlis
             ERROR("Unsupported float vector size: %d\n", vlist.size());
     }
 }
+
+void Shader::setMat4(const std::string& name, glm::mat4 mat) const {
+    GLint location = glGetUniformLocation(ID, name.c_str());
+    if (location < 0) return;
+
+    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(mat));
+}

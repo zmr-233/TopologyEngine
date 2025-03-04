@@ -16,6 +16,10 @@
 #include <algorithm>
 #include <utility>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "utils.hpp"
 
 struct Shader {
@@ -27,6 +31,7 @@ struct Shader {
     void setBool(const std::string &name, std::initializer_list<bool> vlist) const;
     void setInt(const std::string &name, std::initializer_list<int> vlist) const;
     void setFloat(const std::string &name, std::initializer_list<float> vlist) const;
+    void setMat4(const std::string &name, glm::mat4) const;
 };
 
 #endif
