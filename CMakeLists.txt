@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # 头文件目录
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-# 添加源文件 - 排除glad.c，因为我们使用vcpkg安装的glad
+# 添加源文件
 file(GLOB_RECURSE SOURCES 
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )

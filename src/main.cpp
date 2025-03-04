@@ -1,39 +1,4 @@
-// clang-format off
-#include <glad/glad.h>  //要在glfw前引入
-#include <GLFW/glfw3.h>
-// clang-format on
-
-#include <iostream>
-#include <ostream>
-#include <cmath>
-
-#include "utils.hpp"
-
-const std::string vertexShaderSource = R"#==#(
-#version 330 core
-layout (location = 0) in vec3 aPos;   // 位置变量的属性位置值为 0 
-layout (location = 1) in vec3 aColor; // 颜色变量的属性位置值为 1
-
-out vec3 ourColor; // 向片段着色器输出一个颜色
-
-void main()
-{
-    gl_Position = vec4(aPos, 1.0);
-    ourColor = aColor; // 将ourColor设置为我们从顶点数据那里得到的输入颜色
-}
-)#==#";
-
-const std::string fragmentShaderSource = R"#==#(
-#version 330 core
-out vec4 FragColor;  
-in vec3 ourColor;
-
-void main()
-{
-    FragColor = vec4(ourColor, 1.0);
-}
-
-)#==#";
+#include "shader.hpp"
 
 int main() {
     // 初始化GLFW 并配置GLFW
@@ -59,41 +24,19 @@ int main() {
         glViewport(0, 0, width, height);  // 使用回调函数，确保窗口大小改变时，视口也会被调整
     });
 
-    // 编译着色器
+    // 着色器类
     //-----------------------------------------------------------
-    // 顶点着色器
-    uint vertexShader{glCreateShader(GL_VERTEX_SHADER)};
-    const char* shaderCode = vertexShaderSource.c_str();
-    glShaderSource(vertexShader, 1, &shaderCode, nullptr);
-    glCompileShader(vertexShader);
-    CHECK_SHADER_COMPILE(vertexShader);
-
-    // 片段着色器
-    uint fragmentShader{glCreateShader(GL_FRAGMENT_SHADER)};
-    shaderCode = fragmentShaderSource.c_str();
-    glShaderSource(fragmentShader, 1, &shaderCode, nullptr);
-    glCompileShader(fragmentShader);
-    CHECK_SHADER_COMPILE(fragmentShader);
-
-    // 着色器程序 & 链接着色器
-    uint shaderProgram{glCreateProgram()};
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    CHECK_SHADER_LINK(shaderProgram);
-    // 激活着色器程序
-    glUseProgram(shaderProgram);
-    // 删除着色器
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    std::string vFilePath = "res/shaders/shader.vert";
+    std::string fFilePath = "res/shaders/shader.frag";
+    Shader context(vFilePath, fFilePath);
 
     // 设置顶点数据
     //-----------------------------------------------------------
     float vertices[] = {
         // 位置              // 颜色
-         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
-        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // 左下
-         0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // 顶部
+        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,   // 右下
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // 左下
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,    // 顶部
     };
 
     unsigned int indices[] = {
@@ -120,9 +63,9 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     // 颜色属性
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    
+
     // 解绑VBO
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // 解绑VAO
@@ -156,13 +99,13 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         // 绘制三角形
-        float timeValue = glfwGetTime();
+        float timeValue  = glfwGetTime();
         float greenValue = (std::sin(timeValue) / 2.0f) + 0.5f;
-        float redValue = (std::sin(timeValue) + 12.0f/ 3.0f) + 7.5f;
-        float blueValue = (std::sin(timeValue) - 10.0f/ 4.0f) - 5.5f;
-        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");        
-        glUseProgram(shaderProgram);
-        glUniform4f(vertexColorLocation, redValue, greenValue, blueValue, 1.0f);
+        float redValue   = (std::sin(timeValue) + 12.0f / 3.0f) + 7.5f;
+        float blueValue  = (std::sin(timeValue) - 10.0f / 4.0f) - 5.5f;
+        context.use();
+        context.setFloat("ourColor", {redValue, greenValue, blueValue});
+        context.setFloat("aOffset", {0.5f, 0.1f, 0.0f});
 
         glBindVertexArray(VAO);
         // glDrawArrays(GL_TRIANGLES, 0, 3); 不再使用
@@ -178,7 +121,6 @@ int main() {
     //-----------------------------------------------------------
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
 
     // 终止GLFW
     //-----------------------------------------------------------
