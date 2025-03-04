@@ -5,24 +5,31 @@
 
 #include <iostream>
 #include <ostream>
+#include <cmath>
 
 #include "utils.hpp"
 
 const std::string vertexShaderSource = R"#==#(
 #version 330 core
 layout (location = 0) in vec3 aPos;
+out vec4 vertexColor; // 为片段着色器指定一个颜色输出
 void main()
 {
     gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    vertexColor = vec4(0.5, 0.0, 0.0, 1.0); // 把输出变量设置为暗红色
 }
 )#==#";
 
 const std::string fragmentShaderSource = R"#==#(
 #version 330 core
+
+in vec4 vertexColor; // 从顶点着色器传来的输入变量（名称相同、类型相同）
 out vec4 FragColor;
+uniform vec4 ourColor; // 在OpenGL程序代码中设定这个变量
 void main()
 {
-    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+    // FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+    FragColor = ourColor;
 }
 )#==#";
 
@@ -111,7 +118,7 @@ int main() {
     // 3. 把索引数组到一个索引缓冲中，供OpenGL使用
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    // 3. 设置顶点属性指针
+    // 4. 设置顶点属性指针
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
@@ -120,14 +127,13 @@ int main() {
     // 解绑VAO
     glBindVertexArray(0);
 
-    
-    auto wireframeMode = [](){ //线框模式
+    auto wireframeMode = []() {  // 线框模式
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     };
-    auto fillMode = [](){ //填充模式
+    auto fillMode = []() {  // 填充模式
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     };
-    wireframeMode();
+    // wireframeMode();
 
     // 渲染循环(Render Loop)
     //-----------------------------------------------------------
@@ -147,8 +153,16 @@ int main() {
         //-----------------------------------------------------------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
         // 绘制三角形
+        float timeValue = glfwGetTime();
+        float greenValue = (std::sin(timeValue) / 2.0f) + 0.5f;
+        float redValue = (std::sin(timeValue) + 12.0f/ 3.0f) + 7.5f;
+        float blueValue = (std::sin(timeValue) - 10.0f/ 4.0f) - 5.5f;
+        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");        
         glUseProgram(shaderProgram);
+        glUniform4f(vertexColorLocation, redValue, greenValue, blueValue, 1.0f);
+
         glBindVertexArray(VAO);
         // glDrawArrays(GL_TRIANGLES, 0, 3); 不再使用
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
