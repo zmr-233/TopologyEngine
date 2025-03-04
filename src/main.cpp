@@ -17,7 +17,7 @@ int main() {
 
     // 窗口对象
     //-----------------------------------------------------------
-    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", nullptr, nullptr);
     CHECK_PTR(window);
     glfwMakeContextCurrent(window);  // 将当前窗口的上下文设置为当前线程的主上下文
 
@@ -160,14 +160,19 @@ int main() {
             i++;
         });
 
-        // 旋转物体
-        glm::mat4 trans(1.0f);
-        trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+        // 变换物体
+        glm::mat4 model(1.0f), view(1.0f), projection(1.0f);
+        model      = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        view       = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
+        // 送入着色器
+        context.use();
+        context.setMat4("model", model);
+        context.setMat4("view", view);
+        context.setMat4("projection", projection);
 
         // 绘制物体
-        context.use();
-        context.setMat4("transform", trans);
         glBindVertexArray(VAO);
         // glDrawArrays(GL_POLYGON, 0, 4);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
