@@ -7,3 +7,4 @@
 // 屏幕宽高
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 600
+#define FOV_ANGLE 45.0f
