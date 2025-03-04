@@ -11,26 +11,28 @@
 
 const std::string vertexShaderSource = R"#==#(
 #version 330 core
-layout (location = 0) in vec3 aPos;
-out vec4 vertexColor; // 为片段着色器指定一个颜色输出
+layout (location = 0) in vec3 aPos;   // 位置变量的属性位置值为 0 
+layout (location = 1) in vec3 aColor; // 颜色变量的属性位置值为 1
+
+out vec3 ourColor; // 向片段着色器输出一个颜色
+
 void main()
 {
-    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-    vertexColor = vec4(0.5, 0.0, 0.0, 1.0); // 把输出变量设置为暗红色
+    gl_Position = vec4(aPos, 1.0);
+    ourColor = aColor; // 将ourColor设置为我们从顶点数据那里得到的输入颜色
 }
 )#==#";
 
 const std::string fragmentShaderSource = R"#==#(
 #version 330 core
+out vec4 FragColor;  
+in vec3 ourColor;
 
-in vec4 vertexColor; // 从顶点着色器传来的输入变量（名称相同、类型相同）
-out vec4 FragColor;
-uniform vec4 ourColor; // 在OpenGL程序代码中设定这个变量
 void main()
 {
-    // FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-    FragColor = ourColor;
+    FragColor = vec4(ourColor, 1.0);
 }
+
 )#==#";
 
 int main() {
@@ -88,19 +90,14 @@ int main() {
     // 设置顶点数据
     //-----------------------------------------------------------
     float vertices[] = {
-        0.5f, 0.5f, 0.0f,    // 右上角
-        0.5f, -0.5f, 0.0f,   // 右下角
-        -0.5f, -0.5f, 0.0f,  // 左下角
-        -0.5f, 0.5f, 0.0f    // 左上角
+        // 位置              // 颜色
+         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
+        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // 左下
+         0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // 顶部
     };
 
     unsigned int indices[] = {
-        // 注意索引从0开始!
-        // 此例的索引(0,1,2,3)就是顶点数组vertices的下标，
-        // 这样可以由下标代表顶点组合成矩形
-
-        0, 1, 3,  // 第一个三角形
-        1, 2, 3   // 第二个三角形
+        0, 1, 2,  // 第一个三角形
     };
 
     // 顶点数组对象(Vertex Array Object, VAO) &
@@ -119,9 +116,13 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     // 4. 设置顶点属性指针
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    // 位置属性
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-
+    // 颜色属性
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
+    glEnableVertexAttribArray(1);
+    
     // 解绑VBO
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // 解绑VAO
