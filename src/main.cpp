@@ -58,9 +58,11 @@ int main() {
 
     // 着色器类
     //-----------------------------------------------------------
-    std::string vFilePath = "res/shaders/shader.vert";
-    std::string fFilePath = "res/shaders/shader.frag";
-    Shader context(vFilePath, fFilePath);
+    std::string vFilePath = "res/shaders/object.vert";
+    std::string fFilePath = "res/shaders/object.frag";
+    std::string lFilePath = "res/shaders/light.frag";
+    Shader objectCTX(vFilePath, fFilePath);
+    Shader lightCTX(vFilePath, lFilePath);
 
     // 设置顶点数据
     //-----------------------------------------------------------
@@ -111,45 +113,107 @@ int main() {
     // clang-format on
     std::vector<glm::vec3> cubePositions = {
         glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(2.0f, 5.0f, -15.0f),
-        glm::vec3(-1.5f, -2.2f, -2.5f),
-        glm::vec3(-3.8f, -2.0f, -12.3f),
-        glm::vec3(2.4f, -0.4f, -3.5f),
-        glm::vec3(-1.7f, 3.0f, -7.5f),
-        glm::vec3(1.3f, -2.0f, -2.5f),
-        glm::vec3(1.5f, 2.0f, -2.5f),
-        glm::vec3(1.5f, 0.2f, -1.5f),
-        glm::vec3(-1.3f, 1.0f, -1.5f)};
+        // glm::vec3(2.0f, 5.0f, -15.0f),
+        // glm::vec3(-1.5f, -2.2f, -2.5f),
+        // glm::vec3(-3.8f, -2.0f, -12.3f),
+        // glm::vec3(2.4f, -0.4f, -3.5f),
+        // glm::vec3(-1.7f, 3.0f, -7.5f),
+        // glm::vec3(1.3f, -2.0f, -2.5f),
+        // glm::vec3(1.5f, 2.0f, -2.5f),
+        // glm::vec3(1.5f, 0.2f, -1.5f),
+        // glm::vec3(-1.3f, 1.0f, -1.5f)
+    };
+    std::vector<glm::vec3> lightPositions = {
+        glm::vec3(1.2f, 1.0f, 2.0f),
+    };
 
     unsigned int indices[] = {
         0, 1, 3,  // 第一个三角形
         1, 2, 3   // 第二个三角形
     };
 
-    // 顶点数组对象(Vertex Array Object, VAO) &
-    // 顶点缓冲对象(Vertex Buffer Object, VBO) &
-    // 索引缓冲对象(Element Buffer Object, EBO)
-    uint VAO{}, VBO{}, EBO{};
-    std::vector<std::pair<std::string, uint>> textures{
-        {"res/textures/container.jpg", 0},
-        {"res/textures/awesomeface.png", 0}};
+    uint objectVAO{};
+    uint lightVAO{};
+    uint VBO{};
+    uint EBO{};
 
-    glGenVertexArrays(1, &VAO);
+    // =============
+    // 生成 VAO 和 VBO（以及 EBO，如果需要）
+    glGenVertexArrays(1, &objectVAO);
+    glGenVertexArrays(1, &lightVAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
 
-    // 1.绑定VAO
-    glBindVertexArray(VAO);
+    // ====================================
+    // object相关 -- 1. 绑定objectVAO
+    // ====================================
+    glBindVertexArray(objectVAO);
 
-    // 2. 把顶点数组复制到缓冲中供OpenGL使用
+    // 2. 绑定 VBO 到 GL_ARRAY_BUFFER，并为其填充数据
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // 3. 把索引数组到一个索引缓冲中，供OpenGL使用
+    // 3. 绑定 EBO 到 GL_ELEMENT_ARRAY_BUFFER，并为其填充数据
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    // 4. 绑定纹理
+    // 4. 设置顶点属性指针
+    // 位置属性
+    glVertexAttribPointer(
+        0,  // layout(location = 0)
+        3,  // 3个float表示顶点位置
+        GL_FLOAT, GL_FALSE,
+        5 * sizeof(float),  // 步长
+        (void*)0            // 偏移
+    );
+    glEnableVertexAttribArray(0);
+    // 颜色属性 ...
+    // 纹理坐标属性 ...
+
+    // 5. 解绑VAO
+    glBindVertexArray(0);
+
+    // ====================================
+    // light相关 -- 1. 绑定lightVAO
+    // ====================================
+    glBindVertexArray(lightVAO);
+
+    // 2. 绑定 VBO 到 GL_ARRAY_BUFFER，并为其填充数据
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    // 使用相同的VBO数据
+
+    // 3. 绑定EB0到GL_ELEMENT_ARRAY_BUFFER
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    // 使用相同的EBO数据
+
+    // 4. 设置顶点属性指针
+    // 位置属性
+    glVertexAttribPointer(
+        0,  // layout(location = 0)
+        3,  // 3个float表示顶点位置
+        GL_FLOAT, GL_FALSE,
+        5 * sizeof(float),  // 步长
+        (void*)0            // 偏移
+    );
+    glEnableVertexAttribArray(0);
+    // 颜色属性 ...
+    // 纹理坐标属性 ...
+
+    // 5. 解绑VAO
+    glBindVertexArray(0);
+
+    // ====================================
+    // * 后处理
+    // ====================================
+
+    // *解绑VBO
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // *纹理数据
+    // -----------------------------------------------------------
+    std::vector<std::pair<std::string, uint>> textures{
+        {"res/textures/container.jpg", 0},
+        {"res/textures/awesomeface.png", 0}};
     std::for_each(textures.begin(), textures.end(), [i = 0](auto& texture) mutable {
         glGenTextures(1, &texture.second);
         glBindTexture(GL_TEXTURE_2D, texture.second);
@@ -172,22 +236,6 @@ int main() {
         i++;
     });
 
-    // *. 设置顶点属性指针
-    // 位置属性
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // 颜色属性
-    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    // glEnableVertexAttribArray(1);
-    // 纹理坐标属性
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // 解绑VBO
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    // 解绑VAO
-    glBindVertexArray(0);
-
     // *.特殊设置
     // -----------------------------------------------------------
     auto wireframeMode = []() {  // 线框模式
@@ -198,12 +246,12 @@ int main() {
     };
     // wireframeMode();
 
-    // 循环之前
+    // *循环之前
     //-----------------------------------------------------------
-    context.use();
+    objectCTX.use();
     // 告诉OpenGL每个着色器采样器属于哪个纹理单元 -- 通常只需要设置一次即可
     std::for_each(textures.begin(), textures.end(), [&, i = 0](auto& texture) mutable {
-        context.setInt(std::string("texture") + std::to_string(i + 1), {i});
+        objectCTX.setInt(std::string("texture") + std::to_string(i + 1), {i});
         i++;
     });
 
@@ -247,27 +295,55 @@ int main() {
             i++;
         });
 
-        // 变换物体
-        glm::mat4 view(1.0f), projection(1.0f);
-        view       = Camera::getCamera().GetViewMatrix();
-        projection = glm::perspective(glm::radians(Camera::getCamera().Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        // 设置模型、视图和投影矩阵uniform
+        //-----------------------------------------------------------
+        auto set_view = [](Shader& context) {
+            glm::mat4 view(1.0f);
+            view = Camera::getCamera().GetViewMatrix();
+            context.setMat4("view", view);
+        };
+        auto set_projection = [](Shader& context) {
+            glm::mat4 projection(1.0f);
+            projection = glm::perspective(glm::radians(Camera::getCamera().Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+            context.setMat4("projection", projection);
+        };
+        auto set_model = [](
+                             std::vector<glm::vec3>& poses,
+                             Shader& context,
+                             auto extra = [](glm::mat4& model) {}) { ;
+            std::for_each(poses.begin(), poses.end(), [&context, &extra](auto& pos) {
+                float angle = 20.0f;
+                glm::mat4 model(1.0f);
+                model = glm::translate(model, pos);
+                extra(model);
+                model = glm::rotate(model, (float)glfwGetTime() * glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+                context.setMat4("model", model);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }); };
 
-        // 送入着色器
-        context.use();
-        context.setMat4("view", view);
-        context.setMat4("projection", projection);
+        // ====================================
+        // object相关
+        // ====================================
+        objectCTX.use();
+        glBindVertexArray(objectVAO);
+        set_model(cubePositions, objectCTX, [](glm::mat4& model) {});
+        set_view(objectCTX);
+        set_projection(objectCTX);
+        objectCTX.setFloat("objectColor", {1.0f, 0.5f, 0.31f});
+        objectCTX.setFloat("lightColor", {1.0f, 1.0f, 1.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        // 绘制物体 -- 多个立方体
-        glBindVertexArray(VAO);
-        std::for_each(cubePositions.begin(), cubePositions.end(), [&context](auto& pos) {
-            float angle = 20.0f;
-            glm::mat4 model(1.0f);
-            model = glm::translate(model, pos);
-            model = glm::rotate(model, (float)glfwGetTime() * glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            context.setMat4("model", model);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+        // ====================================
+        // light相关
+        // ====================================
+        lightCTX.use();
+        glBindVertexArray(lightVAO);
+        set_model(lightPositions, lightCTX, [](glm::mat4& model) {
+            model = glm::scale(model, glm::vec3(0.5f));
         });
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        set_view(lightCTX);
+        set_projection(lightCTX);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // 交换缓冲
         //-----------------------------------------------------------
@@ -277,8 +353,10 @@ int main() {
 
     // 释放资源
     //-----------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
+    glDeleteVertexArrays(1, &objectVAO);
+    glDeleteVertexArrays(1, &lightVAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
 
     // 终止GLFW
     //-----------------------------------------------------------
