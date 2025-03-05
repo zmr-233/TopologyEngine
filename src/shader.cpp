@@ -114,6 +114,13 @@ void Shader::setFloat(const std::string& name, std::initializer_list<float> vlis
     }
 }
 
+void Shader::setFloat(const std::string& name, glm::vec3& v) const {
+    GLint location = glGetUniformLocation(ID, name.c_str());
+    if (location < 0) return;
+
+    glUniform3f(location, v.x, v.y, v.z);
+}
+
 void Shader::setMat4(const std::string& name, glm::mat4 mat) const {
     GLint location = glGetUniformLocation(ID, name.c_str());
     if (location < 0) return;
