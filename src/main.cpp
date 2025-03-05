@@ -1,5 +1,6 @@
 #include "shader.hpp"
 #define STB_IMAGE_IMPLEMENTATION
+#include "camera.hpp"
 #include "define.hpp"
 #include "stb_image.h"
 
@@ -26,11 +27,34 @@ int main() {
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
         glViewport(0, 0, width, height);  // 使用回调函数，确保窗口大小改变时，视口也会被调整
     });
+    // 注册鼠标回调函数
+    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
+        static bool firstMouse = true;
+        static float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
+        if (firstMouse) {
+            // glfwSetCursorPos(window, lastX, lastY);
+            lastX      = xpos;
+            lastY      = ypos;
+            firstMouse = false;
+        } else {
+            float xoffset = xpos - lastX;
+            float yoffset = lastY - ypos;
+            // reversed since y-coordinates go from bottom to top
+            lastX = xpos;
+            lastY = ypos;
+            Camera::getCamera().ProcessMouseMovement(xoffset, yoffset);
+        }
+    });
+    // 注册滚轮回调函数
+    glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
+        Camera::getCamera().ProcessMouseScroll(static_cast<float>(yoffset));
+    });
 
     // 全局设置
     //-----------------------------------------------------------
-    stbi_set_flip_vertically_on_load(true);  // 设置图片上下翻转
-    glEnable(GL_DEPTH_TEST);                 // 启用深度测试
+    stbi_set_flip_vertically_on_load(true);                       // 设置图片上下翻转
+    glEnable(GL_DEPTH_TEST);                                      // 启用深度测试
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  // 隐藏鼠标
 
     // 着色器类
     //-----------------------------------------------------------
@@ -182,19 +206,34 @@ int main() {
         context.setInt(std::string("texture") + std::to_string(i + 1), {i});
         i++;
     });
+
     // 渲染循环(Render Loop)
     //-----------------------------------------------------------
     while (!glfwWindowShouldClose(window)) {
         // 输入
         //-----------------------------------------------------------
-        // 检查用户是否按下了返回键(Esc)
-        auto processInput = [](GLFWwindow* window) {
-            /*没有按下，glfwGetKey将会返回GLFW_RELEASE */
-            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-                glfwSetWindowShouldClose(window, true);
-            } /* 把WindowShouldClose属性设置为 true来关闭GLFW */
+        auto get_deltaTime = []() {
+            static float deltaTime = 0.0f;
+            static float lastFrame = 0.0f;
+            float currentFrame     = glfwGetTime();
+            deltaTime              = currentFrame - lastFrame;
+            lastFrame              = currentFrame;
+            return deltaTime;
         };
-        processInput(window);
+        auto processInput = [&]() {
+            auto deltaTime = get_deltaTime();
+            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+                glfwSetWindowShouldClose(window, true);
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+                Camera::getCamera().ProcessKeyboard(FORWARD, deltaTime);
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+                Camera::getCamera().ProcessKeyboard(BACKWARD, deltaTime);
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+                Camera::getCamera().ProcessKeyboard(LEFT, deltaTime);
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+                Camera::getCamera().ProcessKeyboard(RIGHT, deltaTime);
+        };
+        processInput();
 
         // 渲染指令
         //-----------------------------------------------------------
@@ -210,8 +249,8 @@ int main() {
 
         // 变换物体
         glm::mat4 view(1.0f), projection(1.0f);
-        view       = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        projection = glm::perspective(glm::radians(FOV_ANGLE), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        view       = Camera::getCamera().GetViewMatrix();
+        projection = glm::perspective(glm::radians(Camera::getCamera().Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
         // 送入着色器
         context.use();
