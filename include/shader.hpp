@@ -28,6 +28,7 @@ struct Shader {
     void use();  // 使用/激活程序
     // uniform工具函数
     void setBool(const std::string &name, std::initializer_list<bool> vlist) const;
+    void setInt(const std::string &name, int v) const;
     void setInt(const std::string &name, std::initializer_list<int> vlist) const;
     void setFloat(const std::string &name, float v) const;
     void setFloat(const std::string &name, std::initializer_list<float> vlist) const;

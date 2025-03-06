@@ -68,6 +68,13 @@ void Shader::setBool(const std::string& name, std::initializer_list<bool> vlist)
     }
 }
 
+void Shader::setInt(const std::string& name, int v) const {
+    GLint location = glGetUniformLocation(ID, name.c_str());
+    if (location < 0) return;
+
+    glUniform1i(location, v);
+}
+
 void Shader::setInt(const std::string& name, std::initializer_list<int> vlist) const {
     GLint location = glGetUniformLocation(ID, name.c_str());
     if (location < 0) return;
