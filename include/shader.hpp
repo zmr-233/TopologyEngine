@@ -29,6 +29,7 @@ struct Shader {
     // uniform工具函数
     void setBool(const std::string &name, std::initializer_list<bool> vlist) const;
     void setInt(const std::string &name, std::initializer_list<int> vlist) const;
+    void setFloat(const std::string &name, float v) const;
     void setFloat(const std::string &name, std::initializer_list<float> vlist) const;
     void setFloat(const std::string &name, glm::vec3 &v) const;
     void setMat4(const std::string &name, glm::mat4) const;

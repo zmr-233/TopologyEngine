@@ -2,7 +2,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "camera.hpp"
 #include "define.hpp"
+#include "material.hpp"
 #include "stb_image.h"
+#include "utils.hpp"
 
 int main() {
     // 初始化GLFW 并配置GLFW
@@ -124,7 +126,7 @@ int main() {
         glm::vec3(1.5f, 0.2f, -1.5f),
         glm::vec3(-1.3f, 1.0f, -1.5f)};
     std::vector<glm::vec3> lightPositions = {
-        glm::vec3(6.2f, 3.0f, 0.0f),
+        glm::vec3(4.2f, 3.0f, 0.0f),
     };
 
     unsigned int indices[] = {
@@ -299,6 +301,7 @@ int main() {
             projection = glm::perspective(glm::radians(Camera::getCamera().Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
             context.setMat4("projection", projection);
         };
+        /*易错：已经包含了DrawArrays 应该最后调用*/
         auto set_model = [](
                              std::vector<glm::vec3>& poses,
                              Shader& context,
@@ -312,42 +315,76 @@ int main() {
                 context.setMat4("model", model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }); };
+
+        auto set_material = [](std::string name, Shader& context) {
+            materials[name](context);
+        };
+        // 带衰减光照强度 -- 适用于自行设定参数
+        auto set_light = [](glm::vec3 lightColor, glm::vec3& lightPos, Shader& context) {
+            glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);    // 降低影响
+            glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);  // 很低的影响
+
+            context.setFloat("light.ambient", ambientColor);
+            context.setFloat("light.diffuse", diffuseColor);
+            context.setFloat("light.specular", {1.0f, 1.0f, 1.0f});
+            context.setFloat("light.position", lightPos);
+        };
+        // 最大光照强度 -- 适用于直接使用材质参数着色
+        auto set_light_max = [](glm::vec3 lightColor, glm::vec3& lightPos, Shader& context) {
+            glm::vec3 diffuseColor = lightColor * glm::vec3(1.0f);    // 最大光照强度
+            glm::vec3 ambientColor = diffuseColor * glm::vec3(1.0f);  // 最大光照强度
+
+            context.setFloat("light.ambient", ambientColor);
+            context.setFloat("light.diffuse", diffuseColor);
+            context.setFloat("light.specular", {1.0f, 1.0f, 1.0f});
+            context.setFloat("light.position", lightPos);
+        };
+
+        auto cal_lightColor = []() {
+            glm::vec3 lightColor;
+            lightColor.x = std::max((float)sin(glfwGetTime() * 2.0f), 0.3f);
+            lightColor.y = std::max((float)sin(glfwGetTime() * 0.7f), 0.5f);
+            lightColor.z = std::max((float)sin(glfwGetTime() * 1.3f), 0.4f);
+            return lightColor;
+        };
         auto rotate_light = [](glm::vec3 lightPos) {
             glm::mat4 model(1.0f);
             float angle = 5.0f;
-            model = glm::rotate(model, glm::radians(angle) / 20.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-            lightPos = glm::vec3(model * glm::vec4(lightPos, 1.0f));
+            model       = glm::rotate(model, glm::radians(angle) / 20.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+            lightPos    = glm::vec3(model * glm::vec4(lightPos, 1.0f));
             return lightPos;
         };
 
         // 旋转光源
-        lightPositions[0] = rotate_light(lightPositions[0]);
+        // lightPositions[0] = rotate_light(lightPositions[0]);
+        // 光源颜色
+        auto lightColor = glm::vec3(1.0f);  // cal_lightColor();
 
         // ====================================
         // object相关
         // ====================================
         objectCTX.use();
         glBindVertexArray(objectVAO);
-        set_model(cubePositions, objectCTX, [](glm::mat4& model) {});
         set_view(objectCTX);
         set_projection(objectCTX);
-        objectCTX.setFloat("objectColor", {1.0f, 0.5f, 0.31f});
-        objectCTX.setFloat("lightColor", {1.0f, 1.0f, 1.0f});
-        objectCTX.setFloat("lightPos", lightPositions[0]);
+        set_material("brass", objectCTX);
+        set_light_max(lightColor, lightPositions[0], objectCTX);
         objectCTX.setFloat("viewPos", Camera::getCamera().Position);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        set_model(cubePositions, objectCTX, [](glm::mat4& model) {});
 
         // ====================================
         // light相关
         // ====================================
         lightCTX.use();
         glBindVertexArray(lightVAO);
-        set_model(lightPositions, lightCTX, [](glm::mat4& model) {
-            model = glm::scale(model, glm::vec3(0.2f));
-        });
         set_view(lightCTX);
         set_projection(lightCTX);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        lightCTX.setFloat("lightColor", lightColor);
+
+        set_model(lightPositions, lightCTX, [](glm::mat4& model) {
+            model = glm::scale(model, glm::vec3(0.5f));
+        });
 
         // 交换缓冲
         //-----------------------------------------------------------

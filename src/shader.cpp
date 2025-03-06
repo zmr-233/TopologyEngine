@@ -91,6 +91,13 @@ void Shader::setInt(const std::string& name, std::initializer_list<int> vlist) c
     }
 }
 
+void Shader::setFloat(const std::string& name, float v) const {
+    GLint location = glGetUniformLocation(ID, name.c_str());
+    if (location < 0) return;
+
+    glUniform1f(location, v);
+}
+
 void Shader::setFloat(const std::string& name, std::initializer_list<float> vlist) const {
     GLint location = glGetUniformLocation(ID, name.c_str());
     if (location < 0) return;
