@@ -114,18 +114,17 @@ int main() {
     // clang-format on
     std::vector<glm::vec3> cubePositions = {
         glm::vec3(0.0f, 0.0f, 0.0f),
-        // glm::vec3(2.0f, 5.0f, -15.0f),
-        // glm::vec3(-1.5f, -2.2f, -2.5f),
-        // glm::vec3(-3.8f, -2.0f, -12.3f),
-        // glm::vec3(2.4f, -0.4f, -3.5f),
-        // glm::vec3(-1.7f, 3.0f, -7.5f),
-        // glm::vec3(1.3f, -2.0f, -2.5f),
-        // glm::vec3(1.5f, 2.0f, -2.5f),
-        // glm::vec3(1.5f, 0.2f, -1.5f),
-        // glm::vec3(-1.3f, 1.0f, -1.5f)
-    };
+        glm::vec3(2.0f, 5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3(2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f, 3.0f, -7.5f),
+        glm::vec3(1.3f, -2.0f, -2.5f),
+        glm::vec3(1.5f, 2.0f, -2.5f),
+        glm::vec3(1.5f, 0.2f, -1.5f),
+        glm::vec3(-1.3f, 1.0f, -1.5f)};
     std::vector<glm::vec3> lightPositions = {
-        glm::vec3(1.2f, 1.0f, 2.0f),
+        glm::vec3(6.2f, 3.0f, 0.0f),
     };
 
     unsigned int indices[] = {
@@ -278,7 +277,7 @@ int main() {
 
         // 渲染指令
         //-----------------------------------------------------------
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // 清除颜色缓冲和深度缓冲
 
         // 绑定纹理
@@ -313,6 +312,16 @@ int main() {
                 context.setMat4("model", model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }); };
+        auto rotate_light = [](glm::vec3 lightPos) {
+            glm::mat4 model(1.0f);
+            float angle = 5.0f;
+            model = glm::rotate(model, glm::radians(angle) / 20.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+            lightPos = glm::vec3(model * glm::vec4(lightPos, 1.0f));
+            return lightPos;
+        };
+
+        // 旋转光源
+        lightPositions[0] = rotate_light(lightPositions[0]);
 
         // ====================================
         // object相关
@@ -325,6 +334,7 @@ int main() {
         objectCTX.setFloat("objectColor", {1.0f, 0.5f, 0.31f});
         objectCTX.setFloat("lightColor", {1.0f, 1.0f, 1.0f});
         objectCTX.setFloat("lightPos", lightPositions[0]);
+        objectCTX.setFloat("viewPos", Camera::getCamera().Position);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // ====================================
@@ -333,7 +343,7 @@ int main() {
         lightCTX.use();
         glBindVertexArray(lightVAO);
         set_model(lightPositions, lightCTX, [](glm::mat4& model) {
-            model = glm::scale(model, glm::vec3(0.5f));
+            model = glm::scale(model, glm::vec3(0.2f));
         });
         set_view(lightCTX);
         set_projection(lightCTX);
