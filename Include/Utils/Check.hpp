@@ -1,7 +1,7 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
-#include "define.hpp"
-#include "marco.hpp"
+#include "Settings.hpp"
+#include "Marco.hpp"
 
 #define CHECK_PTR(ptr)                  \
     if (ptr == nullptr) {               \

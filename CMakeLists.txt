@@ -9,11 +9,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # cmake -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buildsystems/vcpkg.cmake ..
 
 # 头文件目录
-include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/Include)
 
 # 添加源文件
 file(GLOB_RECURSE SOURCES 
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cpp"
 )
 
 # 正确查找所有需要的包
@@ -39,6 +39,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 # 将整个 res 文件夹复制到构建目录
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}/res
-    $<TARGET_FILE_DIR:${PROJECT_NAME}>/res
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>/Resources
 )

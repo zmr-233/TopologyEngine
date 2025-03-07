@@ -1,5 +1,9 @@
-#ifndef SHADER_H
-#define SHADER_H
+/****************************************
+ * File: Include/Resources/Shader.hpp
+ * 说明：
+ ****************************************/
+
+#pragma once
 
 // clang-format off
 #include <glad/glad.h>  //要在glfw前引入
@@ -14,16 +18,15 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <initializer_list>
 #include <iostream>
+#include <optional>
 #include <ostream>
 #include <sstream>
 #include <utility>
 #include <vector>
 
-#include "utils.hpp"
-
 struct Shader {
     uint ID;  // 程序ID
-    Shader(std::string &vertexPath, std::string &fragmentPath);
+    Shader(std::string vertexPath, std::string fragmentPath);
 
     void use();  // 使用/激活程序
     // uniform工具函数
@@ -35,5 +38,3 @@ struct Shader {
     void setFloat(const std::string &name, glm::vec3 &v) const;
     void setMat4(const std::string &name, glm::mat4) const;
 };
-
-#endif

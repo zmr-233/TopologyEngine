@@ -1,13 +1,20 @@
-#include "shader.hpp"
+/******************************************************
+ * File: Source/Resources/Shader.cpp
+ ******************************************************/
 
-Shader::Shader(std::string& vertexPath, std::string& fragmentPath) : ID(0) {
+// 资源/工具
+#include "../Include/Resources/Shader.hpp"
+
+#include "../Include/Utils/Check.hpp"
+
+Shader::Shader(std::string vertexPath, std::string fragmentPath) : ID(0) {
     // 1. 从文件路径中获取顶点/片段着色器
     std::fstream vertexFile, fragmentFile;
     std::string vertexCode, fragmentCode;
+    std::stringstream vertexStream, fragmentStream;
     try {
         vertexFile.open(vertexPath);
         fragmentFile.open(fragmentPath);
-        std::stringstream vertexStream, fragmentStream;
         vertexStream << vertexFile.rdbuf();
         fragmentStream << fragmentFile.rdbuf();
         vertexFile.close();
@@ -19,6 +26,8 @@ Shader::Shader(std::string& vertexPath, std::string& fragmentPath) : ID(0) {
     }
     const char* vShaderCode = vertexCode.c_str();
     const char* fShaderCode = fragmentCode.c_str();
+    CHECK_PTR(vShaderCode);
+    CHECK_PTR(fShaderCode);
     // 2. 编译着色器
     //  顶点着色器
     uint vertexShader{glCreateShader(GL_VERTEX_SHADER)};
