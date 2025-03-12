@@ -1,5 +1,5 @@
 /******************************************************
- * File: Resources/Shaders/object.vert
+ * FILE: Resources/Shaders/object.vert
  ******************************************************/
 #version 330 core
 layout (location = 0) in vec3 aPos;

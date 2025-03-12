@@ -1,5 +1,5 @@
 /******************************************************
- * File: Resources/Shaders/light.frag
+ * FILE: Resources/Shaders/light.frag
  ******************************************************/
 
 #version 330 core

@@ -8,6 +8,9 @@
     "glew",
     "glfw3",
     "opengl",
-    "glm"
+    "glm",
+    "nameof",
+    "tbb",
+    "taskflow"
   ]
 }
