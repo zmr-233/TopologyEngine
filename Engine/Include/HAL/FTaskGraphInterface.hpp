@@ -41,16 +41,16 @@ class FTaskGraphImplementation : public FTaskGraphInterface {
 
     void StartupAll(int WorkerCount) {
         // 建立命名线程(仅演示GameThread=0,RenderThread=1,AudioThread=2)
-        // NamedThreads.emplace(0, new FNamedTaskThread(0, "GameThread"));
-        // NamedThreads.emplace(1, new FNamedTaskThread(1, "RenderThread"));
-        // NamedThreads.emplace(2, new FNamedTaskThread(2, "AudioThread"));
+        NamedThreads.emplace(0, new FNamedTaskThread(0, "GameThread"));
+        NamedThreads.emplace(1, new FNamedTaskThread(1, "RenderThread"));
+        NamedThreads.emplace(2, new FNamedTaskThread(2, "AudioThread"));
 
-        // 启动
-        // for (auto& kv : NamedThreads) {
-        //     ThreadHandles.emplace_back(std::thread([=]() {
-        //         kv.second->Run();
-        //     }));
-        // }
+        //启动
+        for (auto& kv : NamedThreads) {
+            ThreadHandles.emplace_back(std::thread([=]() {
+                kv.second->Run();
+            }));
+        }
 
         // 后台
         StopWorkers = false;
@@ -81,7 +81,6 @@ class FTaskGraphImplementation : public FTaskGraphInterface {
         {
             std::lock_guard<std::mutex> lk(WorkerMtx);
             StopWorkers = true;
-            // LOG("StopWorkers = true");
         }
         WorkerCv.notify_all();
         for (auto& wt : WorkerThreads) {
@@ -97,7 +96,6 @@ class FTaskGraphImplementation : public FTaskGraphInterface {
         if (ENamedThreads::IsAnyThread(ThreadToExecuteOn)) {
             // 后台
             std::lock_guard<std::mutex> lk(WorkerMtx);
-            // Task->AddRef();  // hold 1
             WorkerQueue.push(Task);
             WorkerCv.notify_one();
         } else {
@@ -123,7 +121,6 @@ class FTaskGraphImplementation : public FTaskGraphInterface {
     virtual void WaitUntilTasksComplete(const std::vector<FGraphEventRef>& Tasks) override {
         int i = 0;
         for (auto& e : Tasks) {
-            // LOG("WaitUntilTasksComplete CNT: {}", i++);
             if (e) {
                 e->Wait();
             }
@@ -154,10 +151,7 @@ class FTaskGraphImplementation : public FTaskGraphInterface {
                 front = WorkerQueue.front();
                 WorkerQueue.pop();
             }
-            // LOG("WorkerLoop: ExecuteTask");
-            // LOG("[Workerloop::ExecuteTask] ID={}", front->Meta());
             front->ExecuteTask();
-            // LOG("WorkerLoop: Release");
             front->Release();
         }
     }

@@ -1,0 +1,59 @@
+@startuml TEventCount
+
+namespace UE::FutexInternal {
+  class IFutexWrapper {
+    + FutexWait(addr: int*, expected: int, timeout: timespec*) : int
+    + FutexWake(addr: int*, count: int) : int
+  }
+
+  class FAtomicFutex {
+    - IFutexWrapper* Wrapper
+    --
+    + WaitWhile( AtomicRef, ConditionLambda, OnBeforeWait, optional SpinLimit, optional Time, ... )
+    + WakeOne( AtomicRef, OnWakeLambda )
+    + WakeAll( AtomicRef )
+    --
+    - // helpers: BuildTimespec(deadline), etc.
+  }
+}
+
+namespace UE {
+  class FManualResetEvent {
+    - std::atomic<uint8> State
+    + bool IsNotified() : bool
+    + Wait() : void
+    + WaitUntil(...) : bool
+    + Notify() : void
+    + Reset() : void
+  }
+
+  class FConditionVariable {
+    - std::atomic<bool> bHasWaiters
+    + NotifyOne() : void
+    + NotifyAll() : void
+    + Wait(Lock&) : void
+  }
+
+  class FMutex {
+    - std::atomic<uint8> State
+    + Lock() : void
+    + Unlock() : void
+    + TryLock() : bool
+    + IsLocked() : bool
+  }
+
+  class FExternalMutex {
+    - std::atomic<uint8>& State
+    + Lock() : void
+    + Unlock() : void
+    + TryLock() : bool
+    + IsLocked() : bool
+  }
+
+  FManualResetEvent -> FAtomicFutex : uses
+  FConditionVariable -> FAtomicFutex : uses
+  FMutex -> FAtomicFutex : uses
+  FExternalMutex -> FAtomicFutex : uses
+}
+
+@enduml

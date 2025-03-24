@@ -54,16 +54,12 @@ void FRunnableThread::RunThread() {
     // 记录一下这个线程的 ID
     ThreadID = std::hash<std::thread::id>()(std::this_thread::get_id());
 
-    // LOG("[RunThread] Started: {}, ID: {}", ThreadName, ThreadID);
     if (!Runnable)
         return;
     // 初始化
     if (Runnable->Init()) {
-        // LOG("[RunThread] Initialized: {}, ID: {}", ThreadName, ThreadID);
         // 运行
         Runnable->Run();
     }
     Runnable->Exit();
-    // LOG("[RunThread] Exited: {}, ID: {}", ThreadName, ThreadID);
-    // bRunning不在此处管理
 }

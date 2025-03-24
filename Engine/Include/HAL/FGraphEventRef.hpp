@@ -16,17 +16,11 @@ class TRefCountPtr {
 
     TRefCountPtr(ReferencedType* InReference)
         : Reference(InReference) {
-        // if (Reference) {
-        //     Reference->AddRef();
-        // }
     }
 
     // 拷贝构造
     TRefCountPtr(const TRefCountPtr& Other)
         : Reference(Other.Reference) {
-        // if (Reference) {
-        //     Reference->AddRef();
-        // }
     }
 
     // 移动构造
@@ -37,8 +31,6 @@ class TRefCountPtr {
 
     ~TRefCountPtr() {
         if (Reference) {
-            // LOG("[~TRefCountPtr()]: Release");
-            // Reference->Release();
             Reference = nullptr;
         }
     }
@@ -46,14 +38,7 @@ class TRefCountPtr {
     // 拷贝赋值
     TRefCountPtr& operator=(const TRefCountPtr& Other) {
         if (this != &Other) {
-            // if (Reference) {
-            //     LOG("[operator=]: Release");
-            //     Reference->Release();
-            // }
             Reference = Other.Reference;
-            // if (Reference) {
-            //     Reference->AddRef();
-            // }
         }
         return *this;
     }
@@ -61,10 +46,6 @@ class TRefCountPtr {
     // 移动赋值
     TRefCountPtr& operator=(TRefCountPtr&& Other) noexcept {
         if (this != &Other) {
-            // if (Reference) {
-            //     LOG("[~TRefCountPtr()]: Release");
-            //     Reference->Release();
-            // }
             Reference       = Other.Reference;
             Other.Reference = nullptr;
         }

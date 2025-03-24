@@ -30,7 +30,6 @@ class FNamedTaskThread : public FRunnable {
     }
 
     virtual uint32_t Run() override {
-        // LOG("Named Thread {} Run().", ThreadIndex);
         while (!bStop.load()) {
             FBaseGraphTask* nextTask = WaitForTask();
             if (!nextTask)
@@ -38,9 +37,6 @@ class FNamedTaskThread : public FRunnable {
 
             // 执行
             nextTask->ExecuteTask();
-            // worker 不 release，因为 ExecuteTask() 里 MarkAsComplete() => subsequent release
-            // but we do need to do a Release here if we used AddRef in queue
-            // LOG("[NamedThread] Release Task");
             nextTask->Release();
         }
         return 0;
@@ -72,8 +68,6 @@ class FNamedTaskThread : public FRunnable {
    private:
     FBaseGraphTask* WaitForTask() {
         std::unique_lock<std::mutex> lk(QueueMutex);
-        // 当 MainQueue 和 LocalQueue 都为空时，阻塞
-        // LOG("bStop={}, MainQueue={}, LocalQueue={}", bStop.load(), MainQueue.size(), LocalQueue.size());
 
         QueueCV.wait(lk, [this] {
             return bStop.load() || !MainQueue.empty() || !LocalQueue.empty();
@@ -94,8 +88,6 @@ class FNamedTaskThread : public FRunnable {
         }
         return nullptr;
     }
-
-    // void ExecuteTask(FBaseGraphTask* Task);
 
    private:
     uint32_t ThreadIndex;

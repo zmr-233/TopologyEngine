@@ -33,10 +33,6 @@ static std::atomic<bool> noSubseq(false);
 
 class FBaseGraphTask {
    public:
-    // 打印元信息
-    // virtual int Meta() {
-    //     return -1;
-    // }
 
     // 默认构造：给它一个初始引用计数=1
     FBaseGraphTask()
@@ -55,9 +51,8 @@ class FBaseGraphTask {
         int old = RefCount.fetch_sub(1, std::memory_order_acq_rel);
         if (old == 1) {
             SetCompeted();
-            // delete this;
+            // delete this; // 由调用者负责 delete
         }
-        // LOG("cur ref= {}", old - 1);
     }
     uint32_t GetRefCount() const { return RefCount.load(std::memory_order_relaxed); }
 
@@ -80,7 +75,6 @@ class FBaseGraphTask {
         std::lock_guard<std::mutex> lk(Mutex);
         InSub->AddRef();  // 父任务持有后置任务一份引用
         SubsequentTasks.push_back(InSub);
-        // 在 caller 里 AddRef(InSub) or 由InSub->AddPrerequisite()调用
     }
 
     /**
@@ -125,10 +119,7 @@ class FBaseGraphTask {
                 if (Sub->PrerequisitesOutstanding.load(std::memory_order_acquire) == 1) {
                     hasOne = false;
                 }
-                // LOG("Task completed, notify subsequent task.");
                 Sub->DependencyResolved();
-                // 我对后置也有一次 AddRef => Release
-                // LOG("[MarkAsComplete] Release Subsequent");
                 Sub->Release();
 
                 // ERROR: 通知检测是否发生了锁死
@@ -138,7 +129,6 @@ class FBaseGraphTask {
 
             // 释放前置
             for (auto* Pre : Prerequisites) {
-                // LOG("[MarkAsComplete] Release Prerequisites");
                 Pre->Release();
             }
             Prerequisites.clear();
@@ -150,7 +140,6 @@ class FBaseGraphTask {
      * 若需要同步等任务完成
      */
     void Wait() {
-        // LOG("[Wait] ID={}", Meta());
         std::unique_lock<std::mutex> lk(Mutex);
         CV.wait(lk, [&] { return bCompleted.load(std::memory_order_acquire); });
     }
@@ -160,7 +149,6 @@ class FBaseGraphTask {
     }
 
     bool SetCompeted() {
-        // LOG("[SetCompeted] ID={}", Meta());
         bCompleted.store(true, std::memory_order_release);
         return true;
     }

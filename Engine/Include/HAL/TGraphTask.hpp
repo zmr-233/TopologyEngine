@@ -16,9 +16,6 @@
 struct FTaskGraphLambdaImpl {
     std::function<void()> Work;
 
-    // 也可加 TStatId, DebugName, ...
-    // 这里简化
-
     // 统一风格: DoTask
     void DoTask() {
         if (Work) Work();
@@ -31,15 +28,8 @@ struct FTaskGraphLambdaImpl {
 template <typename TTaskType>
 class TGraphTask : public FBaseGraphTask {
    public:
-    // virtual int Meta() override {
-    //     return ID;
-    // }
-    // 构造
     TGraphTask(ENamedThreads::Type InThread)
-        : DesiredThread(InThread)
-        // , ID(NextID++) 
-        {
-        // LOG("[Create TGraphTask] ID={}", ID);
+        : DesiredThread(InThread) {
     }
 
     virtual void ExecuteTask() override {
@@ -68,8 +58,6 @@ class TGraphTask : public FBaseGraphTask {
    private:
     ENamedThreads::Type DesiredThread;
     std::aligned_storage_t<sizeof(TTaskType), alignof(TTaskType)> Storage;
-    // uint32 ID;
-    // static inline uint32 NextID{0};
 };
 
 //-------------------------------------
