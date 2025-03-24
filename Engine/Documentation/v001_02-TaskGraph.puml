@@ -1,0 +1,364 @@
+@startuml TaskGraph
+
+' 特别注意: 哪怕并不是"接口实现"，但如果A函数实现就是调用B函数，此处记录为 A <|.. B
+' 如上认为B是对A的特殊的"方法实现"，而不是"接口实现"，哪怕他们本质上并没有继承关系
+
+set namespaceSeparator ::
+
+
+namespace HAL #b550a3{
+    namespace Private{
+        class FGenericPlatformManualResetEvent{
+            -mutex Lock
+            -condition_variable Condition
+            -atomic<bool> bWait
+            +Reset()
+            +Wait()
+            +WaitUntil(): bool
+            +Notify()
+        }
+
+        class FLinuxPlatformManualResetEvent {
+            -atomic<int> state
+            +Reset()
+            +Wait()
+            +WaitUntil(): bool
+            +Notify()
+        }
+
+        FGenericPlatformManualResetEvent <|-- FLinuxPlatformManualResetEvent : "Linux-specific"
+    }
+}
+
+
+namespace ParkingLot #ab71c8{
+    namespace Private{
+        class TObjectAllocator{
+            + {static} Malloc()
+            + {static} Free()
+
+            .. Private Data ..
+            - {static} FreeListMutex
+            - {static} FreeListHead
+        }
+
+        struct FThread{
+            - FThread* Next
+            - void* WaitAddress
+            - uint64 WakeToken
+            - FPlatformManualResetEvent Event
+            - atomic<uint32> ReferenceCount
+            - {static} TObjectAllocator<FThread> Allocator
+
+            + AddRef()
+            + Release()
+            + {static} New()
+
+        }
+        TObjectAllocator o.. FThread
+        ::HAL::Private::FGenericPlatformManualResetEvent ..|> FThread : used by\n[Event]
+
+        class FThreadLocalData{
+            + {static} Get()
+            - TRefCountPtr<FThread> Thread
+            - bool bDestroyed
+            - {static} atomic<uint32> ThreadCount
+            - {static} thread_local ThreadLocalData;
+        }
+
+        FThread "N" o-- "1" FThreadLocalData
+
+        class FBucket{
+            + {static} Create()
+            + {static} Destroy()
+            + Enqueue()
+            + Dequeue()
+            + DequeueIf()
+            - FThread* Head
+            - FThread* Tail
+            - FWordMutex Mutex
+            - {static} TObjectAllocator<FBucket> Allocator
+        }
+
+        FThread "N" o-- "1" FBucket
+        TObjectAllocator o.. FBucket
+
+        class FTable{
+            + {static} FindOrCreateBucket()
+            + {static} FindBucket()
+            + {static} Reserve()
+            - {static} CreateOrGet()
+            - {static} Create()
+            - {static} Destroy()
+            - {static} HashAddress()
+
+            - uint32 BucketCount
+            - FBucket[] Buckets
+            - {static} GlobalTable()
+
+        }
+
+        FBucket "N" *-- "1" FTable
+    }
+
+    interface IGlobalFunctions {
+        + Wait()
+        + WaitFor()
+        + WaitUntil()
+        + WakeOne()
+    }
+
+    Private::FThreadLocalData o-- IGlobalFunctions : [FThread Self]
+    FTable o-- IGlobalFunctions : [FBucket Bucket]
+}
+
+class TEventCountToken<CounterType> {
+    - Value: CounterType = 1
+    + explicit operator bool() : bool
+}
+
+class TEventCount<CounterType> {
+    - atomic<CounterType> Count = 0
+    --
+    + TEventCount()
+    + PrepareWait()
+    + Wait()
+    + WaitFor() : bool
+    + WaitUntil() : bool
+    + Notify()
+}
+
+TEventCountToken "N" <.. "1" TEventCount
+TEventCount <|.. ParkingLot::IGlobalFunctions : Hash[ &Count, Thread ] \n=> Wait()/Wake()
+
+namespace Tasks#c6db38 {
+    namespace Private #339ab4 {
+        ' Engine/Source/Runtime/Core/Public/Tasks/TaskPrivate.h:120
+        class FPrerequisites{
+            + Push()
+            + PushNoLock()
+            + PopAll()
+            - TArray<FTaskBase*> Prerequisites
+            - FMutex Mutex
+        }
+
+        class FSubsequents {
+            + PushIfNotClosed()
+            + Close()
+            + IsClosed()
+            - TArray<FTaskBase*> Subsequents
+            - FMutex Mutex
+            - atomic<bool> bIsClosed
+        }
+
+        class FTaskBase {
+            .. Liveness ..
+            + AddRef()
+            + Release()
+            + GetRefCount()
+            + TryLaunch()
+            # TryExecuteTask()
+            # Close()
+            - TryUnlock()
+            + Wait(Timeout)
+            + Wait()
+            + WaitWithNamedThreadsSupport()
+            .. Obther ..
+            + Init()
+
+            .. Tasks Order ..
+            + AddPrerequisites()
+            + AddSubsequent()
+            + AddNested()
+            .. Pipe Model (No Sync)..
+            + SetPipe()
+            + GetPipe()
+
+            .. Internal State ..
+            + IsCompleted()
+            + IsAwaitable()
+            + IsNamedThreadTask()
+            + GetPriority()
+            + GetExtendedPriority()
+            __ private data __
+            - FTask LowLevelTask
+
+            - atomic RefCount
+            - FPrerequisites Prerequisites
+            - FSubsequents Subsequents
+
+            - FPipe* Pipe
+
+            - [Priority in LowLevelTask]
+            - Enum ExtendedPriority
+
+            - FEventCount StateChangeEvent
+
+            -- encrypted --
+            - String password
+        }
+
+        ::LowLevelTasks::FTask *-- FTaskBase : [LowLevelTask]
+        ' ::Tasks::FPipe o-- FTaskBase : push deque
+        ::Tasks::FPipe "1" --o "N" FTaskBase : [LinkedList]\nLastTask
+        ::TEventCount *-- FTaskBase : [EventCount]\nStateChangeEvent
+        FPrerequisites *-- FTaskBase : [Prerequisites]
+        FSubsequents *-- FTaskBase : [Subsequents]
+
+        class TTaskWithResult<ResultType>{
+            + GetResult()
+            - TTypeCompatibleBytes<ResultType> ResultStorage
+        }
+        FTaskBase <|-- TTaskWithResult
+
+        class TExecutableTaskBase<TaskBodyType> {
+            + ExecuteTask()
+            - TTypeCompatibleBytes<TaskBodyType> TaskBodyStorage
+        }
+        FTaskBase <|-- TExecutableTaskBase
+
+        class TExecutableTask<TaskBodyType>{
+            + {static} Create()
+            + delete()
+            + new()
+        }
+        TExecutableTaskBase <|-- TExecutableTask
+
+        class FTaskEventBase {
+            + {static} Create()
+            - ExecuteTask()
+        }
+        FTaskBase <|-- FTaskEventBase
+    }
+
+    namespace Private{
+        class FTaskHandle{
+            + IsValid()
+            + IsCompleted()
+            + IsAwaitable()
+            + GetPriority()
+            + GetExtendedPriority()
+            + Wait()
+            + BusyWait()
+            + TryRetractAndExecute()
+            + Launch()
+            - FTaskBase* Pimpl
+
+        }
+
+        FTaskBase *-- FTaskHandle : [FTaskBase* Pimpl]
+    }
+
+    ' Engine/Source/Runtime/Core/Public/Tasks/Task.h:220
+    class TTask<ResultType> {
+        + GetResult()
+    }
+
+    ::Tasks::Private::FTaskHandle <|-- TTask
+
+    class FTaskEvent{
+        + AddPrerequisites()
+        + Trigger()
+    }
+
+    ::Tasks::Private::FTaskHandle <|-- FTaskEvent
+
+    class FPipeCallStack{
+        - static \\
+        thread_local \\
+        TArray<const FPipe*> CallStack
+        + Push()
+        + Pop()
+        + IsOnTop()
+
+    }
+    class FPipe{
+        + HasWork()
+        + WaitUntilEmpty()
+        + Launch()
+        - PushIntoPipe()
+        - ClearTask()
+        __ FPipeCallStack __
+        - ExecutionStarted()
+        - ExecutionFinished()
+        __ private data __
+        - FTaskBase* LastTask
+        - uint64 TaskCount
+        - FEventCount EmptyEvent
+    }
+
+    FPipeCallStack ..> FPipe: thread_local
+
+    interface IGlobalFunctions {
+        + Launch()
+        + Wait()
+        + BusyWait()
+        + Prerequisites()
+    }
+
+    TTask <-- IGlobalFunctions : [Launch]
+}
+
+
+namespace LowLevelTasks#60d4a2 {
+    enum ETaskPriority{
+        High
+        Normal
+        Default
+    }
+    enum ETaskState{
+        Ready
+        Scheduled
+        Canceled
+        Running
+        Completed
+    }
+
+    class TDeleter<Type, DeleteFunc>{
+        - Type* Value
+    }
+
+    namespace Tasks_Impl #38c185 {
+        class FTaskBase {
+
+            + GetPriority()
+            + GetState()
+            + GetFlags()
+
+        }
+
+        class FPackedDataAtomic $tag1 {
+            + load()
+            + store()
+            [Bit Fields] PackedData
+        }
+
+        FPackedDataAtomic *-- FTaskBase
+    }
+
+    ' Engine/Source/Runtime/Core/Public/Async/Fundamental/Task.h:309
+    class FTask{
+        + IsCompleted()
+        + WasCanceled()
+        ' + WasExpedited()
+        ' - WasCanceledOrIsExpediting()
+        + IsReady()
+        + TryCancel()
+        + TryRevive()
+        + TryExpedite()
+        + TryExecute()
+        + TryPrepareLaunch()
+        + TryFinish()
+        ' get the currently active task if any
+        + {static} GetActiveTask()
+
+
+    }
+
+    Tasks_Impl::FTaskBase <|-- FTask : private
+}
+
+
+' remove $tag1
+
+@enduml

@@ -1,0 +1,13 @@
+@startuml TaskGraph
+
+' 特别注意: 哪怕并不是"接口实现"，但如果A函数实现就是调用B函数，此处记录为 A <|.. B
+' 如上认为B是对A的特殊的"方法实现"，而不是"接口实现"，哪怕他们本质上并没有继承关系
+
+set namespaceSeparator ::
+
+
+namespace Tasks{
+    
+}
+
+@enduml

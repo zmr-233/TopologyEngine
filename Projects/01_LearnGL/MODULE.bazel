@@ -1,0 +1,12 @@
+# (C) 01_LearnGL 模块
+module(
+    name = "learngl",
+    version = "0.1",
+)
+
+# 声明对 engine 的依赖
+bazel_dep(name = "engine", version = "0.1")
+local_path_override(
+    module_name = "engine",
+    path = "../../Engine"
+)

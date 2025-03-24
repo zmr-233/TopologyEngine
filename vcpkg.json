@@ -11,6 +11,7 @@
     "glm",
     "nameof",
     "tbb",
-    "taskflow"
+    "taskflow",
+    "gtest"
   ]
 }
