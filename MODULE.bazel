@@ -4,20 +4,22 @@ module(
     version = "0.1",
 )
 
-# 声明依赖 engine 与 my_learngl（都 version=0.1 自己定）
 bazel_dep(name = "engine", version = "0.1")
-bazel_dep(name = "learngl", version = "0.1")
-
-# 将这两个模块指向本地路径
 local_path_override(
     module_name = "engine",
     path = "./Engine"  # 相对本文件的路径
 )
 
+bazel_dep(name = "learngl", version = "0.1")
 local_path_override(
     module_name = "learngl",
     path = "./Projects/01_LearnGL"
 )
+
+
+# ruls_cc ====================================
+# https://github.com/bazelbuild/rules_cc
+bazel_dep(name = "rules_cc", version = "0.1.1")
 
 # Hedron's Compile Commands Extractor for Bazel ====================================
 # https://github.com/hedronvision/bazel-compile-commands-extractor
@@ -26,10 +28,24 @@ git_override(
     module_name = "hedron_compile_commands",
     remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
     commit = "0e990032f3c5a866e72615cf67e5ce22186dcb97",
-    # Replace the commit hash (above) with the latest (https://github.com/hedronvision/bazel-compile-commands-extractor/commits/main).
-    # Even better, set up Renovate and let it do the work for you (see "Suggestion: Updates" in the README).
 )
 
-# 缺陷： 需要声明所有子级模块的依赖，不够自动化
+# GoogleTest ====================================
 bazel_dep(name = "googletest", version = "1.16.0")
-bazel_dep(name = "rules_cc", version = "0.1.1")
+
+# Platforms ====================================
+# https://github.com/bazelbuild/platforms
+bazel_dep(name = "platforms",version="0.0.11")
+
+
+
+
+
+
+
+# 若要使用 "glm", "nameof", "tbb", "taskflow" 等：
+# 1) 如果它们有官方 Bazel module：直接 bazel_dep
+# 2) 如果没有，则需用 archive_override + 他们自己的 WORKSPACE 构建脚本
+#    或使用其它第三方 bazel 中间仓库
+
+# 也可以继续在这里用 local_path_override、archive_override 等方式完成其他依赖

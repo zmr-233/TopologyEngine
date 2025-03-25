@@ -15,20 +15,13 @@ git_override(
     module_name = "hedron_compile_commands",
     remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
     commit = "0e990032f3c5a866e72615cf67e5ce22186dcb97",
-    # Replace the commit hash (above) with the latest (https://github.com/hedronvision/bazel-compile-commands-extractor/commits/main).
-    # Even better, set up Renovate and let it do the work for you (see "Suggestion: Updates" in the README).
 )
 
-# 假设要使用 GoogleTest、glm 等外部依赖
-# 此处仅示例：如果它们自身尚未升级为 Bazel module，就需要额外配置
-# 这里先演示 gtest 的官方模块用法 (bzlmod)，glm 等类似处理或采用 archive_override
+# GoogleTest ====================================
 bazel_dep(name = "googletest", version = "1.16.0")
-# 告诉 Bazel，要把当前模块所拉取的 'googletest' 仓库导出给依赖它的上层模块
+
+# Platforms ====================================
+# https://github.com/bazelbuild/platforms
+bazel_dep(name = "platforms",version="0.0.11")
 
 
-# 若要使用 "glm", "nameof", "tbb", "taskflow" 等：
-# 1) 如果它们有官方 Bazel module：直接 bazel_dep
-# 2) 如果没有，则需用 archive_override + 他们自己的 WORKSPACE 构建脚本
-#    或使用其它第三方 bazel 中间仓库
-
-# 也可以继续在这里用 local_path_override、archive_override 等方式完成其他依赖
