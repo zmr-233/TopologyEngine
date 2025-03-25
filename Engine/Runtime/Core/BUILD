@@ -1,6 +1,4 @@
 load("@engine//Tools:BuildMarco.bzl", "engine_lib", "engine_test")
-# package(default_visibility = ["//visibility:public"])engine_lib
-
 
 engine_lib(
     name = "TypeUtilsLib",
@@ -48,7 +46,7 @@ engine_lib(
     }),
 )
 
-# bazel test @engine//Source/Runtime/Core:TypeUtilsTest
+# bazel test @engine//Runtime/Core:TypeUtilsTest
 engine_test(
     name = "TypeUtilsTest",
     srcs = glob(["Tests/TypeUtilsTests/InvokeTest.cpp"]),
@@ -59,7 +57,7 @@ engine_test(
     ],
 )
 
-# bazel test @engine//Source/Runtime/Core:ThreadTest
+# bazel test @engine//Runtime/Core:ThreadTest
 engine_test(
     name = "ThreadTest",
     srcs = glob(["Tests/ThreadTests/ThreadTest.cpp"]),

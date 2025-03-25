@@ -8,7 +8,7 @@ cc_library(
         "-O3",
     ],
     deps = [
-        "@engine//Source/Runtime/Core:TypeUtilsLib",
+        "@engine//Runtime/Core:TypeUtilsLib",
     ],
 )
 
