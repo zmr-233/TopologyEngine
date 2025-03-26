@@ -1,77 +1,66 @@
-load("@engine//Tools:BuildMarco.bzl", "engine_lib", "engine_test")
+load("@engine//Tools:BuildMarco.bzl", "engine_lib", "engine_plib", "engine_test")
 
+##############################################
+# 1. 常规库：MarcoUtilsLib
+##############################################
 engine_lib(
     name = "MarcoUtilsLib",
     srcs = [],
     hdrs = glob(["Public/MarcoUtils/*.hpp"]),
+    include_dirs = [
+        "Engine/Runtime/Core/Public",
+    ],
 )
 
+##############################################
+# 2. 常规库：TypeUtilsLib
+##############################################
 engine_lib(
     name = "TypeUtilsLib",
     srcs = [],
     hdrs = glob(["Public/TypeUtils/*.hpp"]),
-    deps = [
-        ":MarcoUtilsLib",
+    include_dirs = [
+        "Engine/Runtime/Core/Public",
     ],
+    deps = [":MarcoUtilsLib"],
 )
 
-# engine_lib(
-#     name = "DebugUtilsLib",
-#     srcs = glob(
-#         ["Private/DebugUtils/*.cpp"],
-#         allow_empty = True,
-#     ),
-#     hdrs = glob(["Public/DebugUtils/*.hpp"]),
-#     deps = [
-#         ":TypeUtilsLib",
-#     ],
-# )
-
-# engine_lib(
-#     name = "MemoryLib",
-#     srcs = glob(
-#         ["Private/Memory/*.cpp"],
-#         allow_empty = True,
-#     ),
-#     hdrs = glob(["Public/Memory/*.hpp"]),
-#     deps = [
-#         ":TypeUtilsLib",
-#     ],
-# )
-
-engine_lib(
+##############################################
+# 3. 跨平台库：ThreadLib
+##############################################
+engine_plib(
     name = "ThreadLib",
-    srcs = select(
-        {
-            "@platforms//os:linux": glob(
-                ["Private/Thread/*.cpp"],
-                exclude = ["Private/Thread/*_win.cpp"],
-            ),
-            "@platforms//os:windows": glob(
-                ["Private/Thread/*.cpp"],
-                exclude = ["Private/Thread/*_linux.cpp"],
-            ),
-            "//conditions:default": [],
-        },
-    ),
+    srcs = select({
+        "@platforms//os:linux": glob(
+            ["Private/Thread/*.cpp"],
+            exclude = ["Private/Thread/*_win.cpp"],
+        ),
+        "@platforms//os:windows": glob(
+            ["Private/Thread/*.cpp"],
+            exclude = ["Private/Thread/*_linux.cpp"],
+        ),
+        "//conditions:default": [],
+    }),
     hdrs = glob(["Public/Thread/*.hpp"]),
-    copts = select(
-        {
-            "@platforms//os:windows": ["/EHsc"],  # 在 MSVC 下启用 C++ 异常处理
-            "//conditions:default": [],
-        },
-    ),
-    linkopts = select(
-        {
-            "@platforms//os:linux": ["-lpthread"],
-            "//conditions:default": [],
-        },
-    ),
+    include_dirs = [
+        "Engine/Runtime/Core/Public",
+    ],
+    platform_copts = {
+        # Windows: 启用异常处理
+        "windows": ["/EHsc"],
+    },
+    platform_linkopts = {
+        # Linux: 链接 pthread
+        "linux": ["-lpthread"],
+    },
     deps = [
         ":TypeUtilsLib",
     ],
 )
 
+##############################################
+# 4. 常规库：TasksLib
+##############################################
 engine_lib(
     name = "TasksLib",
     srcs = glob(
@@ -79,16 +68,25 @@ engine_lib(
         allow_empty = True,
     ),
     hdrs = glob(["Public/Tasks/*.hpp"]),
+    include_dirs = [
+        "Engine/Runtime/Core/Public",
+    ],
     deps = [
-        # ":MemoryLib",
+        # ":MemoryLib",  # 如有需要可以加回来
         ":TypeUtilsLib",
     ],
 )
 
-# bazel test @engine//Runtime/Core:TypeUtilsTest
+##############################################
+# 5. 测试：TypeUtilsTest
+##############################################
 engine_test(
     name = "TypeUtilsTest",
     srcs = glob(["Tests/TypeUtilsTests/*.cpp"]),
+    include_dirs = [
+        "Engine/Runtime/Core/Public",
+        "Engine/Runtime/Core/Tests/TypeUtilsTests",
+    ],
     deps = [
         ":TypeUtilsLib",
         "@googletest//:gtest",
@@ -96,10 +94,13 @@ engine_test(
     ],
 )
 
-# bazel test @engine//Runtime/Core:ThreadTest
 engine_test(
     name = "ThreadTest",
     srcs = glob(["Tests/ThreadTests/*.cpp"]),
+    include_dirs = [
+        "Engine/Runtime/Core/Public",
+        "Engine/Runtime/Core/Tests/ThreadTests",
+    ],
     deps = [
         ":ThreadLib",
         "@googletest//:gtest",
@@ -107,10 +108,13 @@ engine_test(
     ],
 )
 
-# bazel test @engine//Runtime/Core:TasksTest
 engine_test(
     name = "TasksTest",
     srcs = glob(["Tests/TasksTests/*.cpp"]),
+    include_dirs = [
+        "Engine/Runtime/Core/Public",
+        "Engine/Runtime/Core/Tests/TasksTests",
+    ],
     deps = [
         ":TasksLib",
         "@googletest//:gtest",
