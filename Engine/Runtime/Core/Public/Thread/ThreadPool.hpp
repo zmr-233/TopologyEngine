@@ -3,6 +3,8 @@
  * @brief
  *****************************************************/
 
+#pragma once
+
 #include <functional>
 #include <memory>
 

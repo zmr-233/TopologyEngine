@@ -1,0 +1,9 @@
+# 具体设置:
+# https://bazel.build/run/bazelrc?hl=zh-cn
+
+# 注释: 让所有命令都执行同一条 override_repository
+# common --override_repository=engine=./Engine
+
+build --jobs=16
+
+# build --experimental_convenience_symlinks=ignore

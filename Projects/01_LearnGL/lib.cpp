@@ -10,8 +10,6 @@
 #include <print>
 
 void test_invoke() {
-    using namespace TE::Core::TypeUtils;
-
     // 1. 使用 Invoke 调用普通函数
     auto result1 = Invoke(Add, 3, 4);
     std::println("Add result: {}", result1);
@@ -21,7 +19,7 @@ void test_invoke() {
     auto    result2 = Invoke(&MyClass::Multiply, myObj, 3, 4);
     std::println("Multiply result: {}", result2);
 
-    auto result3 = Invoke(&MyClass::value, myObj);           
+    auto result3 = Invoke(&MyClass::value, myObj);
     std::println("Member variable result: {}", result3);
 
     // 4. 使用 FUNC_PROJECTION 宏进行函数投影

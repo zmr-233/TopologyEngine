@@ -7,15 +7,14 @@ module(
 bazel_dep(name = "engine", version = "0.1")
 local_path_override(
     module_name = "engine",
-    path = "./Engine"  # 相对本文件的路径
+    path = "./Engine",  # 相对本文件的路径
 )
 
 bazel_dep(name = "learngl", version = "0.1")
 local_path_override(
     module_name = "learngl",
-    path = "./Projects/01_LearnGL"
+    path = "./Projects/01_LearnGL",
 )
-
 
 # ruls_cc ====================================
 # https://github.com/bazelbuild/rules_cc
@@ -35,13 +34,7 @@ bazel_dep(name = "googletest", version = "1.16.0")
 
 # Platforms ====================================
 # https://github.com/bazelbuild/platforms
-bazel_dep(name = "platforms",version="0.0.11")
-
-
-
-
-
-
+bazel_dep(name = "platforms", version = "0.0.11")
 
 # 若要使用 "glm", "nameof", "tbb", "taskflow" 等：
 # 1) 如果它们有官方 Bazel module：直接 bazel_dep

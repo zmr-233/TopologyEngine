@@ -4,8 +4,9 @@
  *****************************************************/
 
 #include "Thread/ThreadPool.hpp"
+#include "TypeUtils/CoreType.hpp"
 
-#ifdef _WIN32
+#ifdef ENGINE_PLATFORM_WINDOWS
 
 #include <windows.h>
 
@@ -156,3 +157,4 @@ void ThreadPool::submit(std::function<void()> task) {
 void ThreadPool::waitAll() {
     impl_->waitAllTasksDone();
 }
+#endif

@@ -20,7 +20,6 @@ int Add(int a, int b) {
 } // namespace TE::Core::TypeUtils::Tests
 
 using namespace TE::Core::TypeUtils::Tests;
-using namespace TE::Core::TypeUtils;
 
 // 单元测试部分
 TEST(InvokeTest, TestAddFunction) {
