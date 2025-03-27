@@ -1,7 +1,7 @@
 load("@engine//Tools:BuildMarco.bzl", "engine_lib", "engine_plib", "engine_test")
 
 ##############################################
-# 1. 常规库：MarcoUtilsLib
+# 常规库：MarcoUtilsLib
 ##############################################
 engine_lib(
     name = "MarcoUtilsLib",
@@ -13,7 +13,7 @@ engine_lib(
 )
 
 ##############################################
-# 2. 常规库：TypeUtilsLib
+# 常规库：TypeUtilsLib
 ##############################################
 engine_lib(
     name = "TypeUtilsLib",
@@ -26,7 +26,63 @@ engine_lib(
 )
 
 ##############################################
-# 3. 跨平台库：ThreadLib
+# 常规库：DebugUtilsLib
+##############################################
+engine_lib(
+    name = "DebugUtilsLib",
+    srcs = glob(
+        ["Private/DebugUtils/*.cpp"],
+        allow_empty = True,
+    ),
+    hdrs = glob(["Public/DebugUtils/*.hpp"]),
+    include_dirs = [
+        "Engine/Runtime/Core/Public",
+    ],
+    deps = [
+        # ":TypeUtilsLib",
+    ],
+)
+
+##############################################
+# 常规库：MemoryLib
+##############################################
+engine_lib(
+    name = "MemoryLib",
+    srcs = glob(
+        ["Private/Memory/*.cpp"],
+        allow_empty = True,
+    ),
+    hdrs = glob(["Public/Memory/*.hpp"]),
+    include_dirs = [
+        "Engine/Runtime/Core/Public",
+    ],
+    deps = [
+        ":DebugUtilsLib",
+        ":TypeUtilsLib",
+    ],
+)
+
+##############################################
+# 常规库：TasksLib
+##############################################
+engine_lib(
+    name = "TasksLib",
+    srcs = glob(
+        ["Private/Tasks/*.cpp"],
+        allow_empty = True,
+    ),
+    hdrs = glob(["Public/Tasks/*.hpp"]),
+    include_dirs = [
+        "Engine/Runtime/Core/Public",
+    ],
+    deps = [
+        ":MemoryLib",
+        ":TypeUtilsLib",
+    ],
+)
+
+##############################################
+# 跨平台库：ThreadLib
 ##############################################
 engine_plib(
     name = "ThreadLib",
@@ -59,26 +115,7 @@ engine_plib(
 )
 
 ##############################################
-# 4. 常规库：TasksLib
-##############################################
-engine_lib(
-    name = "TasksLib",
-    srcs = glob(
-        ["Private/Tasks/*.cpp"],
-        allow_empty = True,
-    ),
-    hdrs = glob(["Public/Tasks/*.hpp"]),
-    include_dirs = [
-        "Engine/Runtime/Core/Public",
-    ],
-    deps = [
-        # ":MemoryLib",  # 如有需要可以加回来
-        ":TypeUtilsLib",
-    ],
-)
-
-##############################################
-# 5. 测试：TypeUtilsTest
+# 测试：TypeUtilsTest
 ##############################################
 engine_test(
     name = "TypeUtilsTest",

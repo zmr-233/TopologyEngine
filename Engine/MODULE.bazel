@@ -1,4 +1,5 @@
 # (B) Engine 的模块声明
+"""Engine module declaration and dependencies."""
 module(
     name = "engine",
     version = "0.1",
@@ -22,6 +23,11 @@ bazel_dep(name = "googletest", version = "1.16.0")
 
 # Platforms ====================================
 # https://github.com/bazelbuild/platforms
-bazel_dep(name = "platforms",version="0.0.11")
+bazel_dep(name = "platforms", version = "0.0.11")
 
-
+# 注册工具链
+register_toolchains(
+    # 已有的 (演示)：
+    "@engine//Tools:clang_suite",
+    # "@engine//Tools:windows_clang_x86_64",
+)
